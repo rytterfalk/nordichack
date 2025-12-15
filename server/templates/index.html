@@ -1,19 +1,48 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NordicHack</title>
+<head>
+    <title>NordicTrack Controller</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial; text-align: center; }
+        #status { color: green; }
+        button { padding: 10px; margin: 10px; }
+        .control { font-size: 24px; }
+    </style>
+</head>
+<body>
+    <h1>NordicTrack S30 Controller</h1>
+    <div id="status">Disconnected</div>
+    <div class="control">
+        <button onclick="sendCommand('faster')">Faster (+)</button>
+        <span id="speed">Speed: 0 km/h</span>
+        <button onclick="sendCommand('slower')">Slower (-)</button>
+        <br>
+        <button onclick="setIncline(0)">Incline: 0%</button>
+        <input type="range" id="incline" min="0" max="15" value="0" onchange="setIncline(this.value)">
+        <span id="incline-val">0%</span>
+    </div>
 
-    <link rel="stylesheet" href="static/mdl/material.min.css">
-    <script src="static/mdl/material.min.js"></script>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-  </head>
+    <script>
+        const socket = io();
+        socket.on('connect', () => document.getElementById('status').innerText = 'Connected!');
+        socket.on('status', data => {
+            document.getElementById('status').innerText = data.connected ? 'Treadmill Connected' : 'No Treadmill';
+            if (data.speed) document.getElementById('speed').innerText = `Speed: ${data.speed} km/h`;
+            if (data.incline) document.getElementById('incline-val').innerText = `${data.incline}%`;
+        });
+        socket.on('update', data => {
+            if (data.speed) document.getElementById('speed').innerText = `Speed: ${data.speed} km/h`;
+            if (data.incline) document.getElementById('incline-val').innerText = `${data.incline}%`;
+        });
 
-  <body>
-    <h1>NordicHack</h1>
-    <a href="/controller">Treadmill Control Panel</a>
-  </body>
-  
+        function sendCommand(cmd) {
+            socket.emit('command', {cmd: cmd});
+        }
+        function setIncline(value) {
+            socket.emit('command', {cmd: 'set_incline', value: parseInt(value)});
+            document.getElementById('incline-val').innerText = value + '%';
+        }
+    </script>
+</body>
 </html>
