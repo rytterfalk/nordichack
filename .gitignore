@@ -13,3 +13,4 @@ elm-stuff
 node_modules
 data/
 ant-docs/
+.DS_Store
